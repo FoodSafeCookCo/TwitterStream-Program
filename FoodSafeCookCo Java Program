@@ -1,0 +1,119 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
+import twitter4j.FilterQuery;
+import twitter4j.GeoLocation;
+import twitter4j.StallWarning;
+import twitter4j.Status;
+import twitter4j.StatusDeletionNotice;
+import twitter4j.StatusListener;
+import twitter4j.TwitterException;
+import twitter4j.TwitterStream;
+import twitter4j.TwitterStreamFactory;
+import twitter4j.conf.ConfigurationBuilder;
+
+
+public class Stream {
+    public static void main(String[] args) throws TwitterException, FileNotFoundException, InterruptedException {
+
+    	PrintStream diskwriter = new PrintStream(new File("c:\\path\\to\\your\\file\\filename.txt")); 
+		
+    	
+     final String CONSUMER_KEY = ""; 
+   	 final String CONSUMER_SECRET = ""; 
+   	 final String ACCESS_TOKEN = "";
+   	 final String ACCESS_SECRET = "";	
+    		 
+    ConfigurationBuilder cb = new ConfigurationBuilder();
+    cb.setDebugEnabled(true);
+    cb.setOAuthConsumerKey(CONSUMER_KEY);
+    cb.setOAuthConsumerSecret(CONSUMER_SECRET);
+    cb.setOAuthAccessToken(ACCESS_TOKEN);
+    cb.setOAuthAccessTokenSecret(ACCESS_SECRET);
+
+    TwitterStream twitterStream = new TwitterStreamFactory(cb.build()).getInstance();
+        	 StatusListener listener = new StatusListener() {
+
+        public void onStatus(Status status) {
+        		twitter4j.User user = status.getUser();
+        		
+        	String profileLocation = user.getLocation();
+        	      	
+        final GeoLocation location = status.getGeoLocation();
+        
+        if (location != null) {	      	
+        	double la = status.getGeoLocation().getLatitude();
+        	double lo = status.getGeoLocation().getLongitude();
+        	
+        		if  (
+        			(lo >= -88.263 && lo <= -88.232 && la <= 42.068 && la >= 41.988)	
+        			|| //more bounding boxes 
+        			|| //more bounding boxes
+        	  )  {
+        		byte hit=1; //this is a high priority tweet; lat/lng indicate in 1 of our bounding boxes established above
+        		//write it to the file
+        		diskwriter.println(hit +",@" + status.getUser().getScreenName() + ", " + status.getText() + ", " + status.getCreatedAt() + "," + la + "," + lo + ", " + profileLocation);
+        		
+        		//and write it to the console log (Eclipse, freeware)
+        		System.out.println(run +" - @" + status.getUser().getScreenName() + ", " + status.getText() + ", " + status.getCreatedAt() + "," + la + "," + lo + ", " + profileLocation);
+        	     	        }      
+        	  	}
+        else {
+        	        	
+        	//else check profile location, and if that's not null, write a string with lo and la set to missing
+        	//and see if any part of the profileLocation matches the array of 125 areas of SCC
+        	if (profileLocation != null) {
+        	//check whether any part of the profile location matches and score it hit=2 (indiates a 'possible' match)
+        	//this is a giant array of cities in our area
+        		 String strSCCCities[] = {"ALSIP",
+        				"ARLINGTON HEIGHTS",
+        				//include all the other municipalities here; leave the comma off the last item in the array
+        				};
+        		//convert everything to uppercase		
+        		String PLUpper = profileLocation.toUpperCase();
+        		for (String s: strSCCCities) 
+        			if (PLUpper.contains(s)) {
+        				byte hit = 2;
+        				diskwriter.println(run +",@" + status.getUser().getScreenName() + ", " + status.getText() + ", " + status.getCreatedAt() + "," + "MISSING,"+ "MISSING,"+ PLUpper);
+                System.out.println(run +",@" + status.getUser().getScreenName() + ", " + status.getText() + ", " + status.getCreatedAt() + "," + "MISSING," + "MISSING," + PLUpper);
+        				}
+        		}	
+        	}
+        }
+
+		@Override
+		public void onException(Exception arg0) {
+			// TODO Auto-generated method stub
+		}
+
+		@Override
+		public void onDeletionNotice(StatusDeletionNotice arg0) {
+			// TODO Auto-generated method stub
+		}
+
+		@Override
+		public void onScrubGeo(long arg0, long arg1) {
+			// TODO Auto-generated method stub
+		}
+
+		@Override
+		public void onStallWarning(StallWarning arg0) {
+			// TODO Auto-generated method stub
+		}
+		@Override
+		public void onTrackLimitationNotice(int arg0) {
+			// TODO Auto-generated method stub
+		}
+    };
+
+    FilterQuery fq = new FilterQuery();
+    //put in your array of keywords to search
+    String keywords[] = {
+    		"food poisoning", "food poison"
+    };
+
+    fq.track(keywords);
+    twitterStream.addListener(listener);
+    twitterStream.filter(fq);     
+}
+}
